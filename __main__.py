@@ -13,7 +13,7 @@ from pygame.locals import *
 
 BLACK = (0, 0, 0)
 DARK_GRAY = (100, 100, 100)
-FRAMERATE = 2
+FRAMERATE = 10
 WINDOWS_SIZE = (800, 600)
 
 
@@ -21,7 +21,6 @@ class Snake:
     """Classe modélisant le serpent.
     """
 
-    PIECE_SIZE = 10
     DIRECTIONS = {
         K_UP: (0, -1),
         K_LEFT: (-1, 0),
@@ -29,6 +28,7 @@ class Snake:
         K_RIGHT: (1, 0)
     }
 
+    _PIECE_SIZE = 10
     _INITIAL_LEN = 20
 
     def __init__(self, area):
@@ -38,46 +38,44 @@ class Snake:
         a également une direction aléatoire et une longueur de _INITIAL_LEN bouts.
         """
         pos_i = [
-            randrange(self._INITIAL_LEN*self.PIECE_SIZE, i - self._INITIAL_LEN*self.PIECE_SIZE, self.PIECE_SIZE)
+            randrange(self._INITIAL_LEN*self._PIECE_SIZE, i-self._INITIAL_LEN*self._PIECE_SIZE, self._PIECE_SIZE)
             for i in area
         ]
         self.area = area
-        self.len = self._INITIAL_LEN
+        self.digestion = False
         self.direction = choice(list(self.DIRECTIONS.values()))
         self.body = [
-            [pos_i[0] - i*self.direction[0]*self.PIECE_SIZE, pos_i[1] - i*self.direction[1]*self.PIECE_SIZE]
-            for i in range(self.len)
+            [p_i - i*self._PIECE_SIZE*d for p_i, d in zip(pos_i, self.direction)]
+            for i in range(self._INITIAL_LEN)
         ]
 
     def set_direcion(self, key_direction):
         """Change la direction du serpent.
         """
-        self.direction = self.DIRECTIONS[key_direction]
-
-        # TODO: empêcher de prendre la direction opposée
+        # Pas possible de faire demi-tour
+        new_plus_old = [new + old for new, old in zip(self.DIRECTIONS[key_direction], self.direction)]
+        if not new_plus_old == [0, 0]:
+            self.direction = self.DIRECTIONS[key_direction]
 
     def move(self):
         """Déplace le serpent.
 
         Le serpent retourne de l'autre côté de la zone s'il en sort.
         """
-        for i in range(self.len - 1, 0, -1):
-            self.body[i] = self.body[i-1]
+        if self.digestion:
+            self.body[1:] = self.body
+            self.digestion = False
+        else:
+            self.body[1:] = self.body[:len(self.body)-1]
 
-        self.body[0] = [
-            self.body[0][0] + self.direction[0]*self.PIECE_SIZE,
-            self.body[0][1] + self.direction[1]*self.PIECE_SIZE
-        ]
+        self.body[0] = [b + self._PIECE_SIZE*d for b, d in zip(self.body[0], self.direction)]
 
-        if self.body[0][0] < 0:
-            self.body[0][0] = self.area[0] - self.PIECE_SIZE
-        elif self.body[0][0] > self.area[0]-self.PIECE_SIZE:
-            self.body[0][0] = 0
-
-        if self.body[0][1] < 0:
-            self.body[0][1] = self.area[1] - self.PIECE_SIZE
-        elif self.body[0][1] > self.area[1]-self.PIECE_SIZE:
-            self.body[0][1] = 0
+        # Gestion aux bords de la zone
+        for i in range(2):
+            if self.body[0][i] < 0:
+                self.body[0][i] = self.area[i] - self._PIECE_SIZE
+            elif self.body[0][i] > self.area[i]-self._PIECE_SIZE:
+                self.body[0][i] = 0
 
     def move_on_itself(self):
         """Indique si le serpent se déplace sur lui-même ou non.
@@ -88,7 +86,7 @@ class Snake:
         """Dessine un serpent dans une fenêtre avec une couleur donnée.
         """
         for piece in self.body:
-            pygame.draw.rect(screen, DARK_GRAY, Rect(piece[0], piece[1], self.PIECE_SIZE, self.PIECE_SIZE))
+            pygame.draw.rect(screen, DARK_GRAY, Rect(piece[0], piece[1], self._PIECE_SIZE, self._PIECE_SIZE))
 
 
 # ====
