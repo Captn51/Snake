@@ -54,7 +54,7 @@ class Snake:
         """
         # Pas possible de faire demi-tour
         new_plus_old = [new + old for new, old in zip(self.DIRECTIONS[key_direction], self.direction)]
-        if not new_plus_old == [0, 0]:
+        if new_plus_old != [0, 0]:
             self.direction = self.DIRECTIONS[key_direction]
 
     def move(self):
@@ -82,11 +82,48 @@ class Snake:
         """
         return self.body[0] in self.body[1:]
 
+    def eat(self, cube):
+        """Indique si le serpent a mangé un cube ou non.
+
+        Si le serpent a mangé un cube, il entre en phase de digestion.
+        """
+        if cube.pos == self.body[0]:
+            self.digestion = True
+            return True
+        else:
+            return False
+
     def draw(self, screen, rgb_color):
         """Dessine un serpent dans une fenêtre avec une couleur donnée.
         """
         for piece in self.body:
             pygame.draw.rect(screen, DARK_GRAY, Rect(piece[0], piece[1], self._PIECE_SIZE, self._PIECE_SIZE))
+
+
+class Cube:
+    """Classe modélisant le cube. Le cube est unique tout au long de la partie. Il
+    se déplace lorsqu'il a été attrapé par le serpent, tout en lui donnant un petit
+    bout de lui-même pour qu'il grossisse.
+    """
+
+    _PIECE_SIZE = 10
+
+    def __init__(self, area):
+        """Initialisation du cube.
+
+        Le cube apparait à un endroit aléatoire de la zone.
+        """
+        self.pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+
+    def move(self, area):
+        """Déplace le cube.
+        """
+        self.pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+
+    def draw(self, screen, rgb_color):
+        """Dessine un cube dans une fenêtre avec une couleur donnée.
+        """
+        pygame.draw.rect(screen, DARK_GRAY, Rect(self.pos[0], self.pos[1], self._PIECE_SIZE, self._PIECE_SIZE))
 
 
 # ====
@@ -97,15 +134,19 @@ class Snake:
 pygame.init()
 
 snake = Snake(WINDOWS_SIZE)
+cube = Cube(WINDOWS_SIZE)
 my_clock = pygame.time.Clock()
 screen = pygame.display.set_mode(WINDOWS_SIZE)
 
 pygame.display.set_caption("Snake")
 snake.draw(screen, DARK_GRAY)
+cube.draw(screen, DARK_GRAY)
 
 while True:
     my_clock.tick(FRAMERATE)
     for event in pygame.event.get():
+        # TODO: cas où 2 set_direcion se cumulent car appui trop rapide sur les touches
+
         if event.type == QUIT:
             exit()
 
@@ -116,8 +157,12 @@ while True:
     if snake.move_on_itself():
         break
 
+    if snake.eat(cube):
+        cube.move(WINDOWS_SIZE)
+
     screen.fill(BLACK)
     snake.draw(screen, DARK_GRAY)
+    cube.draw(screen, DARK_GRAY)
     pygame.display.flip()
 
 pygame.quit()
