@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from sys import exit
-from time import sleep
 from random import choice, randrange
 import pygame
 from pygame.locals import *
@@ -16,6 +15,7 @@ BLACK = (0, 0, 0)
 DARK_GRAY = (100, 100, 100)
 FRAMERATE = 10
 WINDOWS_SIZE = (800, 600)
+STARTING_WAIT_TIME = 2000    # 2s
 
 
 class Snake:
@@ -119,18 +119,23 @@ class Cube:
 
         Le cube apparait à un endroit aléatoire de la zone.
         """
-        # TODO: property ?
-        self.pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+        self._pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+
+    @property
+    def pos(self):
+        """Position du cube.
+        """
+        return self._pos
 
     def move(self, area):
         """Déplace le cube.
         """
-        self.pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+        self._pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
 
     def draw(self, screen, rgb_color):
         """Dessine un cube dans une fenêtre avec une couleur donnée.
         """
-        pygame.draw.rect(screen, DARK_GRAY, Rect(self.pos[0], self.pos[1], self._PIECE_SIZE, self._PIECE_SIZE))
+        pygame.draw.rect(screen, DARK_GRAY, Rect(self._pos[0], self._pos[1], self._PIECE_SIZE, self._PIECE_SIZE))
 
 
 # ====
@@ -138,11 +143,11 @@ class Cube:
 # ====
 
 
+pygame.init()
+
 print("Bienvenue dans le jeu du SNAKE !!")
 print("Attention !! Départ dans 2s !!")
-sleep(2)
-
-pygame.init()
+pygame.time.wait(STARTING_WAIT_TIME)
 
 snake = Snake(WINDOWS_SIZE)
 cube = Cube(WINDOWS_SIZE)
