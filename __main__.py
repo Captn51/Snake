@@ -155,6 +155,8 @@ my_clock = pygame.time.Clock()
 screen = pygame.display.set_mode(WINDOWS_SIZE)
 
 pygame.display.set_caption("Snake")
+pygame.display.set_icon(pygame.image.load("snake.ico"))
+
 snake.draw(screen, DARK_GRAY)
 cube.draw(screen, DARK_GRAY)
 pygame.display.flip()
@@ -163,8 +165,6 @@ print("Longueur du serpent :", len(snake), end="")
 while True:
     my_clock.tick(FRAMERATE)
     for event in pygame.event.get():
-        # TODO: cas où 2 set_direction se cumulent car appui trop rapide sur les touches
-
         if event.type == QUIT:
             exit()
 
@@ -186,6 +186,26 @@ while True:
 
 print("")
 print("HA HA !! Tu t'es mangé toi-même !! La longueur atteinte est de", len(snake), "!!")
+
+# Gestion du score
+try:
+    with open("score.snake", "r+t") as score_file:
+        len_max = int(score_file.read())
+        print("Le score enregistré est de :", len_max)
+
+        if len(snake) > len_max:
+            score_file.seek(0)      # Retour au début après lecture
+            score_file.write(str(len(snake)))
+            print("Tu as explosé ton record !! Le nouveau record a bien été enregistré !!")
+        else:
+            print("Tu n'as pas fait mieux !!")
+except FileNotFoundError:
+    with open("score.snake", "wt") as score_file:
+        score_file.write(str(len(snake)))
+        print("Ton premier score a bien été enregistré !!")
+except Exception:
+    print("Il y a un problème avec l'enregistrement du score, il faudra me montrer ça !!")
+
 input("Appuie sur ENTREE pour quitter...")
 
 pygame.quit()
