@@ -14,7 +14,9 @@ from pygame.locals import *
 BLACK = (0, 0, 0)
 DARK_GRAY = (100, 100, 100)
 FRAMERATE = 10
-WINDOWS_SIZE = (800, 600)
+AREA_SIZE = (80, 60)
+PIECE_SIZE = 10
+WINDOW_SIZE = (AREA_SIZE[0] * PIECE_SIZE, AREA_SIZE[1] * PIECE_SIZE)
 STARTING_WAIT_TIME = 2000    # 2s
 
 
@@ -29,7 +31,6 @@ class Snake:
         K_RIGHT: (1, 0)
     }
 
-    _PIECE_SIZE = 10
     _INITIAL_LEN = 20
 
     def __init__(self, area):
@@ -38,15 +39,12 @@ class Snake:
         Le serpent apparait à un endroit aléatoire de la zone, mais en entier. Il
         a également une direction aléatoire et une longueur de _INITIAL_LEN bouts.
         """
-        pos_i = [
-            randrange(self._INITIAL_LEN*self._PIECE_SIZE, i-self._INITIAL_LEN*self._PIECE_SIZE, self._PIECE_SIZE)
-            for i in area
-        ]
+        pos_i = [randrange(self._INITIAL_LEN, i - self._INITIAL_LEN) for i in area]
         self._area = area
         self._digestion = False
         self._direction = choice(list(self.DIRECTIONS.values()))
         self._body = [
-            [p_i - i*self._PIECE_SIZE*d for p_i, d in zip(pos_i, self._direction)]
+            [p_i - i * d for p_i, d in zip(pos_i, self._direction)]
             for i in range(self._INITIAL_LEN)
         ]
 
@@ -67,15 +65,15 @@ class Snake:
             self._body[1:] = self._body
             self._digestion = False
         else:
-            self._body[1:] = self._body[:len(self._body)-1]
+            self._body[1:] = self._body[:len(self._body) - 1]
 
-        self._body[0] = [b + self._PIECE_SIZE*d for b, d in zip(self._body[0], self._direction)]
+        self._body[0] = [b0 + d for b0, d in zip(self._body[0], self._direction)]
 
         # Gestion aux bords de la zone
         for i in range(2):
             if self._body[0][i] < 0:
-                self._body[0][i] = self._area[i] - self._PIECE_SIZE
-            elif self._body[0][i] > self._area[i]-self._PIECE_SIZE:
+                self._body[0][i] = self._area[i] - 1
+            elif self._body[0][i] > self._area[i] - 1:
                 self._body[0][i] = 0
 
     def move_on_itself(self):
@@ -99,11 +97,17 @@ class Snake:
         """
         return len(self._body)
 
-    def draw(self, screen, rgb_color):
+    def draw(self, screen, piece_size, rgb_color):
         """Dessine un serpent dans une fenêtre avec une couleur donnée.
+
+        piece_size est la taille utilisée pour le dessin d'un bout du serpent.
         """
         for piece in self._body:
-            pygame.draw.rect(screen, DARK_GRAY, Rect(piece[0], piece[1], self._PIECE_SIZE, self._PIECE_SIZE))
+            pygame.draw.rect(
+                screen,
+                DARK_GRAY,
+                Rect(piece[0] * piece_size, piece[1] * piece_size, piece_size, piece_size)
+            )
 
 
 class Cube:
@@ -112,14 +116,12 @@ class Cube:
     bout de lui-même pour qu'il grossisse.
     """
 
-    _PIECE_SIZE = 10
-
     def __init__(self, area):
         """Initialisation du cube.
 
         Le cube apparait à un endroit aléatoire de la zone.
         """
-        self._pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+        self._pos = [randrange(0, i) for i in area]
 
     @property
     def pos(self):
@@ -130,12 +132,18 @@ class Cube:
     def move(self, area):
         """Déplace le cube.
         """
-        self._pos = [randrange(0, i, self._PIECE_SIZE) for i in area]
+        self._pos = [randrange(0, i) for i in area]
 
-    def draw(self, screen, rgb_color):
+    def draw(self, screen, piece_size, rgb_color):
         """Dessine un cube dans une fenêtre avec une couleur donnée.
+
+        piece_size est la taille utilisée pour le dessin du cube.
         """
-        pygame.draw.rect(screen, DARK_GRAY, Rect(self._pos[0], self._pos[1], self._PIECE_SIZE, self._PIECE_SIZE))
+        pygame.draw.rect(
+            screen,
+            DARK_GRAY,
+            Rect(self._pos[0] * piece_size, self._pos[1] * piece_size, piece_size, piece_size)
+        )
 
 
 # ====
@@ -149,16 +157,16 @@ print("Bienvenue dans le jeu du SNAKE !!")
 print("Attention !! Départ dans 2s !!")
 pygame.time.wait(STARTING_WAIT_TIME)
 
-snake = Snake(WINDOWS_SIZE)
-cube = Cube(WINDOWS_SIZE)
+snake = Snake(AREA_SIZE)
+cube = Cube(AREA_SIZE)
 my_clock = pygame.time.Clock()
-screen = pygame.display.set_mode(WINDOWS_SIZE)
+screen = pygame.display.set_mode(WINDOW_SIZE)
 
 pygame.display.set_caption("Snake")
 pygame.display.set_icon(pygame.image.load("snake.ico"))
 
-snake.draw(screen, DARK_GRAY)
-cube.draw(screen, DARK_GRAY)
+snake.draw(screen, PIECE_SIZE, DARK_GRAY)
+cube.draw(screen, PIECE_SIZE, DARK_GRAY)
 pygame.display.flip()
 print("Longueur du serpent :", len(snake), end="")
 
@@ -176,11 +184,11 @@ while True:
         break
 
     if snake.eat(cube):
-        cube.move(WINDOWS_SIZE)
+        cube.move(AREA_SIZE)
 
     screen.fill(BLACK)
-    snake.draw(screen, DARK_GRAY)
-    cube.draw(screen, DARK_GRAY)
+    snake.draw(screen, PIECE_SIZE, DARK_GRAY)
+    cube.draw(screen, PIECE_SIZE, DARK_GRAY)
     pygame.display.flip()
     print("\rLongueur du serpent :", len(snake), end="")
 
